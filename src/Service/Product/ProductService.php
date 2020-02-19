@@ -39,6 +39,9 @@ class ProductService
 
     /**
      * Фабричный метод для репозитория Product
+     *  Этот метод тоже можно назвать фабричным, но в нем нужно внести правки
+     *  также как в классах /src/Service/Order/Basket.php и /src/Service/Product/ProductService.php
+     *
      * @return ProductRepository
      */
     protected function getProductRepository(): ProductRepository

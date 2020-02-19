@@ -20,12 +20,9 @@ class ProductRepository
         }
 
         $productList = [];
+        $product = new Product();
         foreach ($this->getDataFromSource(['id' => $ids]) as $item) {
-            $productList[] = new Product(
-                $item['id'],
-                $item['name'],
-                $item['price']
-            );
+            $productList[] = $product->buildClone( $item );
         }
 
         return $productList;
@@ -38,12 +35,9 @@ class ProductRepository
     public function fetchAll(): array
     {
         $productList = [];
+        $product = new Product();
         foreach ($this->getDataFromSource() as $item) {
-            $productList[] = new Product(
-                $item['id'],
-                $item['name'],
-                $item['price']
-            );
+            $productList[] = $product->buildClone( $item );
         }
 
         return $productList;

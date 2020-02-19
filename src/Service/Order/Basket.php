@@ -4,18 +4,13 @@ declare(strict_types = 1);
 
 namespace Service\Order;
 
+use builders\BasketBuilder;
 use Model;
 use Model\Entity\Product;
 use Model\Repository\ProductRepository;
-use Service\Billing\Exception\BillingException;
-use Service\Billing\BillingInterface;
 use Service\Billing\Transfer\Card;
-use Service\Communication\Exception\CommunicationException;
-use Service\Communication\CommunicationInterface;
 use Service\Communication\Sender\Email;
-use Service\Discount\DiscountInterface;
 use Service\Discount\NullObject;
-use Service\User\SecurityInterface;
 use Service\User\Security;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
@@ -88,59 +83,34 @@ class Basket
     /**
      * Оформление заказа
      * @return void
-     * @throws BillingException
-     * @throws CommunicationException
      */
     public function checkout(): void
     {
-        // Здесь должна быть некоторая логика выбора способа платежа
-        $billing = new Card();
+        $builder = (new BasketBuilder())
+            ->setBilling( new Card() )
+            ->setDiscount( new NullObject() )
+            ->setCommunication( new Email() )
+            ->setSecurity( new Security( $this->session ) );
 
-        // Здесь должна быть некоторая логика получения информации о скидке
-        // пользователя
-        $discount = new NullObject();
+        $checkoutProcess = new CheckoutProcess( $builder );
 
-        // Здесь должна быть некоторая логика получения способа уведомления
-        // пользователя о покупке
-        $communication = new Email();
-
-        $security = new Security($this->session);
-
-        $this->checkoutProcess($discount, $billing, $security, $communication);
+        $checkoutProcess->doProcess( $this->getTotalPrice() );
     }
 
     /**
-     * Проведение всех этапов заказа
-     * @param DiscountInterface $discount
-     * @param BillingInterface $billing
-     * @param SecurityInterface $security
-     * @param CommunicationInterface $communication
-     * @return void
-     * @throws BillingException
-     * @throws CommunicationException
-     */
-    public function checkoutProcess(
-        DiscountInterface $discount,
-        BillingInterface $billing,
-        SecurityInterface $security,
-        CommunicationInterface $communication
-    ): void {
-        $totalPrice = 0;
-        foreach ($this->getProductsInfo() as $product) {
-            $totalPrice += $product->getPrice();
-        }
-
-        $discount = $discount->getDiscount();
-        $totalPrice = $totalPrice - $totalPrice / 100 * $discount;
-
-        $billing->pay($totalPrice);
-
-        $user = $security->getUser();
-        $communication->process($user, 'checkout_template');
+     * Получение полнолной цены корзины
+     * @return int
+    **/
+    private function getTotalPrice(): int {
+       return array_reduce( $this->getProductsInfo(), function ( int $carry, Product $product ) {
+            return $carry + $product->getPrice();
+        }, 0);
     }
 
     /**
-     * Фабричный метод для репозитория Product
+     * Аналогично как я описал в классе /src/Service/Order/Basket.php
+     * Это фабричный метот, но его стоит доработать
+     *
      * @return ProductRepository
      */
     protected function getProductRepository(): ProductRepository

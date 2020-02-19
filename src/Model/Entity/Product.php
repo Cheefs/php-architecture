@@ -21,17 +21,6 @@ class Product
      */
     private $price;
 
-    /**
-     * @param int $id
-     * @param string $name
-     * @param float $price
-     */
-    public function __construct(int $id, string $name, float $price)
-    {
-        $this->id = $id;
-        $this->name = $name;
-        $this->price = $price;
-    }
 
     /**
      * @return int
@@ -39,6 +28,16 @@ class Product
     public function getId(): int
     {
         return $this->id;
+    }
+
+    /**
+     * @param int $id
+     * @return self
+     */
+    public function setId( $id ): self
+    {
+        $this->id = $id;
+        return $this;
     }
 
     /**
@@ -50,11 +49,31 @@ class Product
     }
 
     /**
+     * @param string $name
+     * @return self
+     */
+    public function setName( $name ): self
+    {
+        $this->name = $name;
+        return $this;
+    }
+
+    /**
      * @return float
      */
     public function getPrice(): float
     {
         return $this->price;
+    }
+
+    /**
+     * @param string $price
+     * @return self
+     */
+    public function setPrice( $price ): self
+    {
+        $this->price = $price;
+        return $this;
     }
 
     /**
@@ -67,5 +86,20 @@ class Product
             'name' => $this->name,
             'price' => $this->price,
         ];
+    }
+
+    /**
+     * Метод для клонирования, и постсроения обьекта, на основании данных с фугкций fetch и fetchAll
+     * @param array $data
+     * @return Product
+    **/
+    public function buildClone( array $data ) {
+        $clonedProduct = clone $this;
+        $clonedProduct
+            ->setId( $data['id'] )
+            ->setName( $data['name'] )
+            ->setPrice( $data['price'] );
+
+        return $clonedProduct;
     }
 }

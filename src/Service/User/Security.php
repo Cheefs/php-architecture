@@ -79,6 +79,11 @@ class Security implements SecurityInterface
 
     /**
      * Фабричный метод для репозитория User
+     *
+     * Данный класс можно назвать фабричным, если заменить возвращаемое значение на интерфейс, да и эту функциональность
+     * вынести в интерфейс, чтоб классы которые унаследуются от него, имели в себе фабричный метод получения UserRepository ( хотя его стоит назвать getRepository ),
+     * но с какимито своим возврвщаемым репозиторием
+     *
      * @return UserRepository
      */
     protected function getUserRepository(): UserRepository
