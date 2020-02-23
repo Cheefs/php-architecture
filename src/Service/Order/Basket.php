@@ -4,6 +4,7 @@ declare(strict_types = 1);
 
 namespace Service\Order;
 
+use Manager\CheckoutManager;
 use Model;
 use Model\Entity\Product;
 use Model\Repository\ProductRepository;
@@ -87,56 +88,29 @@ class Basket
 
     /**
      * Оформление заказа
+     *  Изменение функции, на работу с фассадом, вторая функция логически должна была уйти в фасад, который выполняет работу
+     * всех переданных в него классов, поэтому с этого класса я удалил функцию checkoutProcess
      * @return void
-     * @throws BillingException
-     * @throws CommunicationException
      */
     public function checkout(): void
     {
-        // Здесь должна быть некоторая логика выбора способа платежа
-        $billing = new Card();
-
-        // Здесь должна быть некоторая логика получения информации о скидке
-        // пользователя
-        $discount = new NullObject();
-
-        // Здесь должна быть некоторая логика получения способа уведомления
-        // пользователя о покупке
-        $communication = new Email();
-
-        $security = new Security($this->session);
-
-        $this->checkoutProcess($discount, $billing, $security, $communication);
+        $manager = new CheckoutManager(
+            new Card(),
+            new NullObject(),
+            new Security($this->session),
+            new Email(),
+        );
+        $manager->checkoutProcess( $this->getTotalPrice() );
     }
 
     /**
-     * Проведение всех этапов заказа
-     * @param DiscountInterface $discount
-     * @param BillingInterface $billing
-     * @param SecurityInterface $security
-     * @param CommunicationInterface $communication
-     * @return void
-     * @throws BillingException
-     * @throws CommunicationException
-     */
-    public function checkoutProcess(
-        DiscountInterface $discount,
-        BillingInterface $billing,
-        SecurityInterface $security,
-        CommunicationInterface $communication
-    ): void {
-        $totalPrice = 0;
-        foreach ($this->getProductsInfo() as $product) {
-            $totalPrice += $product->getPrice();
-        }
-
-        $discount = $discount->getDiscount();
-        $totalPrice = $totalPrice - $totalPrice / 100 * $discount;
-
-        $billing->pay($totalPrice);
-
-        $user = $security->getUser();
-        $communication->process($user, 'checkout_template');
+     * Получение полнолной цены корзины
+     * @return int
+     **/
+    private function getTotalPrice(): int {
+        return array_reduce( $this->getProductsInfo(), function ( int $carry, Product $product ) {
+            return $carry + $product->getPrice();
+        }, 0);
     }
 
     /**
