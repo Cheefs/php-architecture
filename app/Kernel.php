@@ -2,6 +2,10 @@
 
 declare(strict_types = 1);
 
+use Command\UseCase\RegisterConfigHandler;
+use Command\UseCase\RegisterRoutesHandler;
+use Framework\Command\RegisterConfigCommand;
+use Framework\Command\RegisterRoutesCommand;
 use Framework\Registry;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -19,11 +23,6 @@ use Symfony\Component\Routing\RouteCollection;
 class Kernel
 {
     /**
-     * @var RouteCollection
-     */
-    protected $routeCollection;
-
-    /**
      * @var ContainerBuilder
      */
     protected $containerBuilder;
@@ -34,47 +33,30 @@ class Kernel
     }
 
     /**
+     *  Шаблонный метод, он определяет три последовательных шага
+     *  которые алгоритм должен выполнить
      * @param Request $request
      * @return Response
      */
     public function handle(Request $request): Response
     {
-        $this->registerConfigs();
-        $this->registerRoutes();
+        $registerConfigCommand = new RegisterConfigCommand( $this->containerBuilder );
+        (new RegisterConfigHandler( $registerConfigCommand ))->execute();
 
-        return $this->process($request);
-    }
+        $registerRoutesCommand = new RegisterRoutesCommand( $registerConfigCommand->getContainerBuilder() );
+        (new RegisterRoutesHandler( $registerRoutesCommand ))->execute();
 
-    /**
-     * @return void
-     */
-    protected function registerConfigs(): void
-    {
-        try {
-            $fileLocator = new FileLocator(__DIR__ . DIRECTORY_SEPARATOR . 'config');
-            $loader = new PhpFileLoader($this->containerBuilder, $fileLocator);
-            $loader->load('parameters.php');
-        } catch (\Throwable $e) {
-            die('Cannot read the config file. File: ' . __FILE__ . '. Line: ' . __LINE__);
-        }
-    }
-
-    /**
-     * @return void
-     */
-    protected function registerRoutes(): void
-    {
-        $this->routeCollection = require __DIR__ . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'routing.php';
-        $this->containerBuilder->set('route_collection', $this->routeCollection);
+        return $this->process( $request, $registerRoutesCommand->getRouteCollection() );
     }
 
     /**
      * @param Request $request
+     * @param RouteCollection $routeCollection
      * @return Response
      */
-    protected function process(Request $request): Response
+    protected function process(Request $request, RouteCollection $routeCollection): Response
     {
-        $matcher = new UrlMatcher($this->routeCollection, new RequestContext());
+        $matcher = new UrlMatcher($routeCollection, new RequestContext());
         $matcher->getContext()->fromRequest($request);
 
         try {

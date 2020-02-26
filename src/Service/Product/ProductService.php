@@ -7,6 +7,8 @@ namespace Service\Product;
 use Model;
 use Model\Entity\Product;
 use Model\Repository\ProductRepository;
+use Service\Product\CompareTypes\CompareName;
+use Service\Product\CompareTypes\ComparePrice;
 
 class ProductService
 {
@@ -30,11 +32,26 @@ class ProductService
     {
         $productList = $this->getProductRepository()->fetchAll();
 
-        // Применить паттерн Стратегия
-        // $sortType === 'price'; // Сортировка по цене
-        // $sortType === 'name'; // Сортировка по имени
+        switch ( $sortType ) {
+            case 'price': {
+                $compare = new ComparePrice();
+                break;
+            }
+            case 'name': {
+                $compare = new CompareName();
+                break;
+            }
+            default: {
+                $compare = null;
+                break;
+            }
+        }
 
-        return $productList;
+        if ( !$compare ) {
+            return $productList;
+        }
+
+        return (new ProductSort( $compare ) )->sort( $productList );
     }
 
     /**
