@@ -82,6 +82,7 @@ class Kernel
             $request->setSession(new Session());
 
             $controller = (new ControllerResolver())->getController($request);
+
             $arguments = (new ArgumentResolver())->getArguments($request, $controller);
 
             return call_user_func_array($controller, $arguments);

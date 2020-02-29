@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Controller;
+namespace Controller\Product;
 
 use Framework\BaseController;
 use Service\Order\Basket;
@@ -10,7 +10,7 @@ use Service\Product\ProductService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class ProductController extends BaseController
+class ProductInfoController extends BaseController
 {
     /**
      * Информация о продукте
@@ -18,7 +18,7 @@ class ProductController extends BaseController
      * @param string $id
      * @return Response
      */
-    public function infoAction(Request $request, string $id): Response
+    public function action(Request $request, string $id): Response
     {
         $basket = (new Basket($request->getSession()));
 
@@ -37,23 +37,6 @@ class ProductController extends BaseController
         return $this->render(
             'product/info.html.php',
             ['productInfo' => $productInfo, 'isInBasket' => $isInBasket]
-        );
-    }
-
-    /**
-     * Список всех продуктов
-     * @param Request $request
-     * @return Response
-     */
-    public function listAction(Request $request): Response
-    {
-        $productList = (new ProductService())->getAll(
-            $request->query->get('sort', '')
-        );
-
-        return $this->render(
-            'product/list.html.php',
-            ['productList' => $productList]
         );
     }
 }
